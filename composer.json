@@ -1,0 +1,21 @@
+{
+  "name": "adexos/m2-kafka-connector",
+  "description": "Kafka module with Avro support",
+  "license": "MIT",
+  "require": {
+    "ext-rdkafka": "*",
+    "php": "^8.1",
+    "flix-tech/avro-serde-php": "^2.1",
+    "koco/messenger-kafka": "^0.18.0",
+    "symfony/serializer": ">=5.4"
+  },
+  "type": "magento2-module",
+  "autoload": {
+    "files": [
+      "registration.php"
+    ],
+    "psr-4": {
+      "Adexos\\KafkaConnector\\": ""
+    }
+  }
+}

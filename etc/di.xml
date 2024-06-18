@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\MessageQueue\ConnectionTypeResolver">
+        <arguments>
+            <argument name="resolvers" xsi:type="array">
+                <item name="kafka" xsi:type="object">Adexos\KafkaConnector\Connection\ConnectionTypeResolver</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Framework\MessageQueue\QueueFactory">
+        <arguments>
+            <argument name="queueFactories" xsi:type="array">
+                <item name="kafka" xsi:type="object">Adexos\KafkaConnector\Connection\QueueFactory</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Framework\MessageQueue\MessageEncoder">
+        <plugin name="kafka_message_encoder" type="Adexos\KafkaConnector\Plugin\MessageQueue\MessageEncoderPlugin"/>
+    </type>
+
+    <type name="Adexos\KafkaConnector\Plugin\MessageQueue\MessageEncoderPlugin">
+        <arguments>
+            <argument name="serializer" xsi:type="object">KafkaResultSerializer</argument>
+        </arguments>
+    </type>
+
+    <virtualType name="KafkaResultSerializer" type="Symfony\Component\Serializer\Serializer">
+        <arguments>
+            <argument name="normalizers" xsi:type="array">
+                <item name="ObjectNormalizer" xsi:type="object">
+                    Symfony\Component\Serializer\Normalizer\ObjectNormalizer
+                </item>
+            </argument>
+            <argument name="encoders" xsi:type="array">
+                <item name="JsonEncoder" xsi:type="object">
+                    Symfony\Component\Serializer\Encoder\JsonEncoder
+                </item>
+            </argument>
+        </arguments>
+    </virtualType>
+</config>
+

@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<include xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_include.xsd">
+    <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1">
+        <label>General</label>
+        <field id="dsn" translate="label" type="text" sortOrder="5" showInDefault="1">
+            <label>DSN</label>
+            <comment>Broker URL, example : example.gcp.confluent.cloud:9092</comment>
+        </field>
+        <field id="topic_name" translate="label" type="text" sortOrder="10" showInDefault="1">
+            <label>Topic name</label>
+            <comment>Topic name is deconstructed from what is configured on Magento queue XML and what is set here. That's because Magento do not handle XML config per environment.</comment>
+        </field>
+        <field id="group_id" translate="label" type="text" sortOrder="15" showInDefault="1">
+            <label>Group ID</label>
+        </field>
+        <field id="debug" translate="label" type="select" sortOrder="20" showInDefault="1">
+            <label>Debug mode</label>
+            <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+            <comment>Useful for local debug, will show all logs from Kafka</comment>
+        </field>
+        <field id="dev" translate="label" type="select" sortOrder="25" showInDefault="1">
+            <label>Dev mode</label>
+            <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+            <comment>/!\ It's only for dev mode. In this mode, Kafka message will not be consumed, you can try it again and again to do some adjustments.</comment>
+        </field>
+    </group>
+    <group id="auth" translate="label" type="text" sortOrder="20" showInDefault="1">
+        <label>Authentication</label>
+        <field id="sasl_mechanism" translate="label" type="select" sortOrder="10" showInDefault="1">
+            <label>SASL Mechanism</label>
+            <source_model>Adexos\KafkaConnector\Model\Source\Mechanisms</source_model>
+        </field>
+        <field id="security_protocol" translate="label" type="select" sortOrder="15" showInDefault="1">
+            <label>Security Protocol</label>
+            <source_model>Adexos\KafkaConnector\Model\Source\SecurityProtocols</source_model>
+        </field>
+        <field id="username" translate="label" type="text" sortOrder="20" showInDefault="1">
+            <label>Username</label>
+        </field>
+        <field id="password" translate="label" type="text" sortOrder="25" showInDefault="1">
+            <label>Password</label>
+        </field>
+    </group>
+    <group id="avro" translate="label" type="text" sortOrder="30" showInDefault="1">
+        <label>Avro Schema Registry</label>
+        <field id="schema_registry_url" translate="label" type="text" sortOrder="10" showInDefault="1">
+            <label>Schema registry URL</label>
+        </field>
+        <field id="username" translate="label" type="text" sortOrder="15" showInDefault="1">
+            <label>Username</label>
+        </field>
+        <field id="password" translate="label" type="text" sortOrder="20" showInDefault="1">
+            <label>Password</label>
+        </field>
+    </group>
+</include>
