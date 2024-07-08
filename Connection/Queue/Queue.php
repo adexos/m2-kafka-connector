@@ -25,11 +25,12 @@ class Queue implements QueueInterface
     private const ORIGINAL_ENVELOPE = 'original_envelope';
 
     public function __construct(
-        private readonly LoggerInterface $logger,
+        private readonly LoggerInterface                     $logger,
         private readonly AvroSchemaRegistrySerializerFactory $avroSchemaRegistrySerializerFactory,
-        private readonly ConfigResolver $kafkaConfig,
-        private readonly string $magentoTopicName
-    ) {
+        private readonly ConfigResolver                      $kafkaConfig,
+        private readonly string                              $magentoTopicName
+    )
+    {
     }
 
     private ?TransportInterface $transport = null;
@@ -117,26 +118,26 @@ class Queue implements QueueInterface
         $kafkaTransportFactory = new KafkaTransportFactory($rdKafkaFactory, $this->logger);
 
         $avroSerializer = $this->avroSchemaRegistrySerializerFactory->create([
-            'baseUri'      => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
-            'userAuth'     => $this->kafkaConfig->getAvroUsername(),
+            'baseUri' => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
+            'userAuth' => $this->kafkaConfig->getAvroUsername(),
             'passwordAuth' => $this->kafkaConfig->getAvroPassword()
         ]);
 
         $this->transport = $kafkaTransportFactory->createTransport(
             sprintf('kafka+ssl://%s', $this->kafkaConfig->getDsn()),
             [
-                'topic'      => ['name' => $this->kafkaConfig->getTopicName()],
+                'topic' => ['name' => $this->kafkaConfig->getTopicName()],
                 'kafka_conf' => array_merge(
                     [
-                        'group.id'                 => $this->kafkaConfig->getGroupId(),
-                        'sasl.mechanism'           => $this->kafkaConfig->getSaslMechanism(),
-                        'security.protocol'        => $this->kafkaConfig->getSecurityProtocol(),
-                        'sasl.username'            => $this->kafkaConfig->getAuthUsername(),
-                        'sasl.password'            => $this->kafkaConfig->getAuthPassword(),
+                        'group.id' => $this->kafkaConfig->getGroupId(),
+                        'sasl.mechanism' => $this->kafkaConfig->getSaslMechanism(),
+                        'security.protocol' => $this->kafkaConfig->getSecurityProtocol(),
+                        'sasl.username' => $this->kafkaConfig->getAuthUsername(),
+                        'sasl.password' => $this->kafkaConfig->getAuthPassword(),
                         'enable.auto.offset.store' => 'false',
-                        'debug'                    => $this->kafkaConfig->isDebug() ? 'all' : null,
-                        'enable.auto.commit'       => 'false'
+                        'enable.auto.commit' => 'false'
                     ],
+                    $this->getDebugSubconfig(),
                     $this->getDevSubconfig()
                 )
             ],
@@ -144,6 +145,17 @@ class Queue implements QueueInterface
         );
 
         return $this->transport;
+    }
+
+    private function getDebugSubconfig(): array
+    {
+        if ($this->kafkaConfig->isDebug()) {
+            return [
+                'debug' => 'all'
+            ];
+        }
+
+        return [];
     }
 
     private function getDevSubconfig(): array
