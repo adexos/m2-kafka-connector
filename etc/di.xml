@@ -27,11 +27,38 @@
         </arguments>
     </type>
 
+    <virtualType name="KafkaPropertyTypeExtractor" type="Symfony\Component\PropertyInfo\PropertyInfoExtractor">
+        <arguments>
+            <argument name="typeExtractors" xsi:type="array">
+                <item name="phpDocExtractor" xsi:type="object">
+                    Symfony\Component\PropertyInfo\Extractor\PhpDocExtractor
+                </item>
+                <item name="reflectionExtractor" xsi:type="object">
+                    Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor
+                </item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="KafkaObjectNormalizer" type="Symfony\Component\Serializer\Normalizer\ObjectNormalizer">
+        <arguments>
+            <argument name="propertyTypeExtractor" xsi:type="object">
+                KafkaPropertyTypeExtractor
+            </argument>
+        </arguments>
+    </virtualType>
+
     <virtualType name="KafkaResultSerializer" type="Symfony\Component\Serializer\Serializer">
         <arguments>
             <argument name="normalizers" xsi:type="array">
-                <item name="ObjectNormalizer" xsi:type="object">
-                    Symfony\Component\Serializer\Normalizer\ObjectNormalizer
+                <item name="backedEnumNormalizer" xsi:type="object">
+                    Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer
+                </item>
+                <item name="arrayDenormalizer" xsi:type="object">
+                    Symfony\Component\Serializer\Normalizer\ArrayDenormalizer
+                </item>
+                <item name="objectNormalizer" xsi:type="object">
+                    KafkaObjectNormalizer
                 </item>
             </argument>
             <argument name="encoders" xsi:type="array">

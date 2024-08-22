@@ -160,7 +160,7 @@ class Queue implements QueueInterface
 
     private function getDevSubconfig(): array
     {
-        if ($this->kafkaConfig->isDev()) {
+        if ($this->kafkaConfig->readFromStart()) {
             return [
                 'auto.offset.reset' => 'beginning'
             ];

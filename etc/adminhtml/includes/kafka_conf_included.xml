@@ -25,6 +25,11 @@
             <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
             <comment>/!\ It's only for dev mode. In this mode, Kafka message will not be consumed, you can try it again and again to do some adjustments.</comment>
         </field>
+        <field id="read_from_start" translate="label" type="select" sortOrder="25" showInDefault="1">
+            <label>Read from start</label>
+            <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+            <comment>/!\ It's only for dev mode. In this mode, Kafka message will be read from the beginning. Useful to consume already read messages.</comment>
+        </field>
     </group>
     <group id="auth" translate="label" type="text" sortOrder="20" showInDefault="1">
         <label>Authentication</label>

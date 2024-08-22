@@ -13,6 +13,7 @@ class ConfigResolver
     private const KAFKA_GENERAL_TOPIC_NAME_XML_PATH = 'kafka/%s/general/topic_name';
     private const KAFKA_GENERAL_DEBUG_XML_PATH = 'kafka/%s/general/debug';
     private const KAFKA_GENERAL_DEV_XML_PATH = 'kafka/%s/general/dev';
+    private const KAFKA_GENERAL_READ_FROM_START_XML_PATH = 'kafka/%s/general/read_from_start';
     private const KAFKA_AUTH_SASL_MECHANISM_XML_PATH = 'kafka/%s/auth/sasl_mechanism';
     private const KAFKA_AUTH_SECURITY_PROTOCOL_XML_PATH = 'kafka/%s/auth/security_protocol';
     private const KAFKA_AUTH_USERNAME_XML_PATH = 'kafka/%s/auth/username';
@@ -50,6 +51,11 @@ class ConfigResolver
     public function isDev(): bool
     {
         return $this->scopeConfig->isSetFlag($this->buildConfigPath(self::KAFKA_GENERAL_DEV_XML_PATH));
+    }
+
+    public function readFromStart(): bool
+    {
+        return $this->scopeConfig->isSetFlag($this->buildConfigPath(self::KAFKA_GENERAL_READ_FROM_START_XML_PATH));
     }
 
     public function getSaslMechanism(): string
