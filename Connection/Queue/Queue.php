@@ -53,7 +53,7 @@ class Queue implements QueueInterface
 
         $message = $lastStamp->getMessage();
 
-        $id = $message->offset;
+        $id = sprintf('%d-%d', $message->partition, $message->offset);
 
         return new Envelope(
             json_encode($envelope->getMessage(), JSON_THROW_ON_ERROR),
