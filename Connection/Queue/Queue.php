@@ -77,10 +77,10 @@ class Queue implements QueueInterface
                 } catch (Exception $e) {
                     $this->logger->error(
                         $e,
-                        ['context' => 'adexos-kafka', 'topic' => $this->kafkaConfig->getTopicName()]
+                        ['context' => 'adexos-kafka', 'state' => 'reading', 'topic' => $this->kafkaConfig->getTopicName(), 'exception' => $e]
                     );
 
-                    $this->reject($envelope);
+                    $this->reject($envelope, true, $e->getMessage());
                 }
             }
         }
@@ -93,7 +93,7 @@ class Queue implements QueueInterface
     {
         $this->logger->error(
             $rejectionMessage,
-            ['context' => 'adexos-kafka', 'topic' => $this->kafkaConfig->getTopicName()]
+            ['context' => 'adexos-kafka', 'state' => 'rejected', 'topic' => $this->kafkaConfig->getTopicName()]
         );
 
         $this->getKafkaConnection()->reject($envelope->getProperties()[self::ORIGINAL_ENVELOPE]);
