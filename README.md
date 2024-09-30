@@ -46,7 +46,9 @@ You can find the configuration here : `Stores -> Configuration -> Services -> Ka
 ### Add the queue system
 
 #### Communication
+
 `app/code/Namespace/Module/etc/communication.xml`
+
 ```xml
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -66,7 +68,9 @@ This class **must be full typed with PhpDoc** because of Magento 2 requirements
 > Instead, the real Kafka topic name must be defined in the system you have set earlier.**
 
 #### Queue consumer
+
 `app/code/Namespace/Module/etc/queue_consumer.xml`
+
 ```xml
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -74,7 +78,9 @@ This class **must be full typed with PhpDoc** because of Magento 2 requirements
     <consumer name="warehouse"
               queue="warehouse.stock.update"
               connection="kafka.warehouse"
-              handler="Namespace\Module\Handler\StockMessageHandler::handle"/>
+              handler="Namespace\Module\Handler\StockMessageHandler::handle"
+              onlySpawnWhenMessageAvailable="0"
+    />
 </config>
 ```
 
@@ -88,3 +94,9 @@ This class **must be full typed with PhpDoc** because of Magento 2 requirements
 
 - `handler` : The handler that will take your message and process it. The parameter type must be as same type as the one
   defined in `communication.xml` inside the `request` field
+- `onlySpawnWhenMessageAvailable` : this flag must be set to zero. Since natively Magento only spawns a consumer when
+  there is a message available, the Kafka consumer will be spawned and despawned endlessly. A Kafka consumer only
+  commits its offset when a message is read. However, if no message is read and no offset is committed yet, the next
+  time the consumer will spawn, it'll ready from the very end of the queue. Adding this flag ensure that a message will
+  be read at least once and the offset will be commited. In fact, you can remove it after the offset is commit (manually
+  or automatically). It is not advised to do so.
