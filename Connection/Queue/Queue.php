@@ -115,7 +115,7 @@ class Queue implements QueueInterface
 
         $rdKafkaFactory = new RdKafkaFactory();
 
-        $kafkaTransportFactory = new KafkaTransportFactory($rdKafkaFactory, $this->logger);
+        $kafkaTransportFactory = new KafkaTransportFactory($rdKafkaFactory, $this->kafkaConfig->isDebug() ? $this->logger : null);
 
         $avroSerializer = $this->avroSchemaRegistrySerializerFactory->create([
             'baseUri' => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
