@@ -100,3 +100,33 @@ This class **must be full typed with PhpDoc** because of Magento 2 requirements
   time the consumer will spawn, it'll ready from the very end of the queue. Adding this flag ensure that a message will
   be read at least once and the offset will be commited. In fact, you can remove it after the offset is commit (manually
   or automatically). It is not advised to do so.
+
+#### High performance queue
+
+You might need to have a better performance for your queue. To do so, you can add leverage the power of headers from
+Kafka message if your messages has some.
+If you can filter only needed messages by reading headers, you can just skip the Avro deserialization and avoid a lot of
+processing time.
+
+Here is how you can do it :
+
+`app/code/Namespace/Module/etc/di.xml`
+
+```xml
+
+<type name="Adexos\KafkaConnector\Serializer\AvroSchemaRegistrySerializer">
+    <arguments>
+        <argument name="headerFilters" xsi:type="array">
+            <item name="your.magento.topic.name" xsi:type="object">
+                Namespace\Module\Serializer\HeaderFilter\YourCustomAvroHeaderFilter
+            </item>
+        </argument>
+    </arguments>
+</type>
+```
+
+`your.magento.topic.name` : must be replaced by the topic name you defined in `communication.xml` file.
+`Namespace\Module\Serializer\HeaderFilter\YourCustomAvroHeaderFilter` : must be replaced by your custom header filter
+
+Your custom header filter must implement the `Adexos\KafkaConnector\Serializer\HeaderFilter\AvroHeaderFilterInterface`
+and the serializer will automatically pass the headers to your filter if it exists for your topic.
