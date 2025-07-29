@@ -44,7 +44,7 @@ class Queue implements QueueInterface
 
         $envelope = current($lastStamp);
 
-        if ($envelope === false) {
+        if ($envelope === false || empty((array)$envelope->getMessage())) {
             return null;
         }
 
@@ -120,7 +120,8 @@ class Queue implements QueueInterface
         $avroSerializer = $this->avroSchemaRegistrySerializerFactory->create([
             'baseUri' => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
             'userAuth' => $this->kafkaConfig->getAvroUsername(),
-            'passwordAuth' => $this->kafkaConfig->getAvroPassword()
+            'passwordAuth' => $this->kafkaConfig->getAvroPassword(),
+            'topic' => $this->magentoTopicName
         ]);
 
         $this->transport = $kafkaTransportFactory->createTransport(
