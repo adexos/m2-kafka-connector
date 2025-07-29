@@ -127,6 +127,7 @@ class Queue implements QueueInterface
             sprintf('kafka+ssl://%s', $this->kafkaConfig->getDsn()),
             [
                 'topic' => ['name' => $this->kafkaConfig->getTopicName()],
+                'commitAsync' => true,
                 'kafka_conf' => array_merge(
                     [
                         'group.id' => $this->kafkaConfig->getGroupId(),
