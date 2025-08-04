@@ -44,7 +44,7 @@ class Queue implements QueueInterface
 
         $envelope = current($lastStamp);
 
-        if ($envelope === false || empty((array)$envelope->getMessage())) {
+        if ($envelope === false) {
             return null;
         }
 

@@ -58,7 +58,7 @@ class AvroSchemaRegistrySerializer implements SerializerInterface
     public function decode(array $encodedEnvelope): Envelope
     {
         if (!$this->isValidHeader($encodedEnvelope['headers'] ?? [])) {
-            return new Envelope((object)[]);
+            return new Envelope((object)['message' => null]);
         }
 
         $result = $this->recordSerializer->decodeMessage($encodedEnvelope['body']);
