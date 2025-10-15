@@ -170,4 +170,14 @@ class Queue implements QueueInterface
 
         return [];
     }
+
+    public function subscribeQueue(): void
+    {
+        // TODO: Implement subscribeQueue() method.
+    }
+
+    public function clearQueue(): int
+    {
+        // TODO: Implement clearQueue() method.
+    }
 }
