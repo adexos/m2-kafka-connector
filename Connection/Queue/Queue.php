@@ -91,10 +91,12 @@ class Queue implements QueueInterface
      */
     public function reject(EnvelopeInterface $envelope, $requeue = true, $rejectionMessage = null): void
     {
-        $this->logger->error(
-            (string) $rejectionMessage,
-            ['context' => 'adexos-kafka', 'state' => 'rejected', 'topic' => $this->kafkaConfig->getTopicName()]
-        );
+        if (!$requeue || $rejectionMessage !== null) {
+            $this->logger->error(
+                (string) $rejectionMessage,
+                ['context' => 'adexos-kafka', 'state' => 'rejected', 'topic' => $this->kafkaConfig->getTopicName()]
+            );
+        }
 
         $this->getKafkaConnection()->reject($envelope->getProperties()[self::ORIGINAL_ENVELOPE]);
     }
