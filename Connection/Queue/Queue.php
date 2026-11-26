@@ -25,11 +25,15 @@ class Queue implements QueueInterface
 {
     private const ORIGINAL_ENVELOPE = 'original_envelope';
 
+    /**
+     * @param string[] $keyFields Payload field paths indexed by Magento topic name.
+     */
     public function __construct(
         private readonly LoggerInterface                     $logger,
         private readonly AvroSchemaRegistrySerializerFactory $avroSchemaRegistrySerializerFactory,
         private readonly ConfigResolver                      $kafkaConfig,
-        private readonly string                              $magentoTopicName
+        private readonly string                              $magentoTopicName,
+        private readonly array                               $keyFields = []
     )
     {
     }
@@ -106,10 +110,38 @@ class Queue implements QueueInterface
     {
         $message = json_decode($envelope->getBody(), true, 512, JSON_THROW_ON_ERROR);
 
+        $properties = $envelope->getProperties();
+        $keyField = $this->keyFields[$this->magentoTopicName] ?? null;
+
+        if ($keyField !== null && !array_key_exists('kafka_key', $properties)) {
+            $properties['kafka_key'] = $this->resolveMessageKey($message, $keyField);
+        }
+
         $this->getKafkaConnection()->send(new MessengerEnvelope(
             (object) $message,
-            [new SerializerStamp($envelope->getProperties())]
+            [new SerializerStamp($properties)]
         ));
+    }
+
+    private function resolveMessageKey(array $message, string $keyField): string
+    {
+        $value = $message;
+
+        foreach (explode('.', $keyField) as $field) {
+            if (!is_array($value) || !array_key_exists($field, $value)) {
+                throw new Exception(
+                    sprintf('Kafka key field "%s" is missing from the message.', $keyField)
+                );
+            }
+
+            $value = $value[$field];
+        }
+
+        if (!is_string($value)) {
+            throw new Exception(sprintf('Kafka key field "%s" must contain a string.', $keyField));
+        }
+
+        return $value;
     }
 
     private function getKafkaConnection(): TransportInterface

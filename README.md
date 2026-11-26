@@ -187,7 +187,25 @@ The service account must have Kafka write permissions and Schema Registry read/l
 
 ### Keys and headers
 
-For partition keys and Kafka headers, use the Magento queue interface directly:
+To derive a Kafka key from a payload field while using `PublisherInterface`, configure `keyFields` in the
+publishing module's `etc/di.xml`. Entries use Magento topic names and dot-separated paths into the JSON payload:
+
+```xml
+<type name="Adexos\KafkaConnector\Connection\Queue\Queue">
+    <arguments>
+        <argument name="keyFields" xsi:type="array">
+            <item name="orders.create" xsi:type="string">order.reference</item>
+            <item name="orders.update" xsi:type="string">order.reference</item>
+        </argument>
+    </arguments>
+</type>
+```
+
+Configured fields must exist and contain strings; invalid fields fail before sending the message.
+String keys are preserved verbatim, including leading zeros. Topics without a configured field retain the default null key.
+An explicit `kafka_key` envelope property takes precedence over this configuration, including an explicit null.
+
+For explicit partition keys and Kafka headers, use the Magento queue interface directly:
 
 ```php
 // Inject Magento\Framework\MessageQueue\QueueFactoryInterface as $queueFactory.
