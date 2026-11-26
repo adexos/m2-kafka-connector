@@ -14,6 +14,7 @@ class ConfigResolver
     private const KAFKA_GENERAL_DEBUG_XML_PATH = 'kafka/%s/general/debug';
     private const KAFKA_GENERAL_DEV_XML_PATH = 'kafka/%s/general/dev';
     private const KAFKA_GENERAL_READ_FROM_START_XML_PATH = 'kafka/%s/general/read_from_start';
+    private const KAFKA_GENERAL_PUBLISH_TIMEOUT_MS_XML_PATH = 'kafka/%s/general/publish_timeout_ms';
     private const KAFKA_AUTH_SASL_MECHANISM_XML_PATH = 'kafka/%s/auth/sasl_mechanism';
     private const KAFKA_AUTH_SECURITY_PROTOCOL_XML_PATH = 'kafka/%s/auth/security_protocol';
     private const KAFKA_AUTH_USERNAME_XML_PATH = 'kafka/%s/auth/username';
@@ -21,6 +22,8 @@ class ConfigResolver
     private const KAFKA_AVRO_SCHEMA_REGISTRY_URL_XML_PATH = 'kafka/%s/avro/schema_registry_url';
     private const KAFKA_AVRO_USERNAME_XML_PATH = 'kafka/%s/avro/username';
     private const KAFKA_AVRO_PASSWORD_XML_PATH = 'kafka/%s/avro/password';
+    private const KAFKA_AVRO_SUBJECT_XML_PATH = 'kafka/%s/avro/subject';
+    private const KAFKA_AVRO_SCHEMA_VERSION_XML_PATH = 'kafka/%s/avro/schema_version';
 
     public function __construct(
         private readonly string $configurationName,
@@ -31,6 +34,29 @@ class ConfigResolver
     public function getDsn(): string
     {
         return $this->scopeConfig->getValue($this->buildConfigPath(self::KAFKA_GENERAL_DSN_XML_PATH));
+    }
+
+    public function getPublishTimeoutMs(): int
+    {
+        $timeout = (int) $this->scopeConfig->getValue(
+            $this->buildConfigPath(self::KAFKA_GENERAL_PUBLISH_TIMEOUT_MS_XML_PATH)
+        );
+
+        return $timeout > 0 ? $timeout : 10000;
+    }
+
+    public function getAvroSubject(): string
+    {
+        $subject = (string) $this->scopeConfig->getValue($this->buildConfigPath(self::KAFKA_AVRO_SUBJECT_XML_PATH));
+
+        return $subject !== '' ? $subject : $this->getTopicName() . '-value';
+    }
+
+    public function getAvroSchemaVersion(): int
+    {
+        $version = (int) $this->scopeConfig->getValue($this->buildConfigPath(self::KAFKA_AVRO_SCHEMA_VERSION_XML_PATH));
+
+        return max(0, $version);
     }
 
     public function getTopicName(): string

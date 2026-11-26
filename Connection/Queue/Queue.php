@@ -11,11 +11,12 @@ use JsonException;
 use Koco\Kafka\Messenger\KafkaMessageStamp;
 use Koco\Kafka\Messenger\KafkaTransportFactory;
 use Koco\Kafka\RdKafka\RdKafkaFactory;
-use LogicException;
 use Magento\Framework\MessageQueue\Envelope;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
 use Magento\Framework\MessageQueue\QueueInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Messenger\Envelope as MessengerEnvelope;
+use Symfony\Component\Messenger\Stamp\SerializerStamp;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 use function json_encode;
@@ -101,12 +102,14 @@ class Queue implements QueueInterface
         $this->getKafkaConnection()->reject($envelope->getProperties()[self::ORIGINAL_ENVELOPE]);
     }
 
-    /**
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
     public function push(EnvelopeInterface $envelope): void
     {
-        throw new LogicException('Method not implemented yet');
+        $message = json_decode($envelope->getBody(), true, 512, JSON_THROW_ON_ERROR);
+
+        $this->getKafkaConnection()->send(new MessengerEnvelope(
+            (object) $message,
+            [new SerializerStamp($envelope->getProperties())]
+        ));
     }
 
     private function getKafkaConnection(): TransportInterface
@@ -123,7 +126,9 @@ class Queue implements QueueInterface
             'baseUri' => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
             'userAuth' => $this->kafkaConfig->getAvroUsername(),
             'passwordAuth' => $this->kafkaConfig->getAvroPassword(),
-            'topic' => $this->magentoTopicName
+            'topic' => $this->magentoTopicName,
+            'subject' => $this->kafkaConfig->getAvroSubject(),
+            'schemaVersion' => $this->kafkaConfig->getAvroSchemaVersion()
         ]);
 
         $this->transport = $kafkaTransportFactory->createTransport(
@@ -131,6 +136,7 @@ class Queue implements QueueInterface
             [
                 'topic' => ['name' => $this->kafkaConfig->getTopicName()],
                 'commitAsync' => true,
+                'flushTimeout' => $this->kafkaConfig->getPublishTimeoutMs(),
                 'kafka_conf' => array_merge(
                     [
                         'group.id' => $this->kafkaConfig->getGroupId(),

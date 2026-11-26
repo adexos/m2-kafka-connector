@@ -9,6 +9,7 @@ use Magento\Framework\Communication\ConfigInterface as CommunicationConfigInterf
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\MessageQueue\Consumer\ConfigInterface as ConsumerConfigInterface;
 use Magento\Framework\MessageQueue\MessageEncoder;
+use Magento\Framework\MessageQueue\Publisher\ConfigInterface as PublisherConfigInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -18,8 +19,38 @@ class MessageEncoderPlugin
         private readonly ConsumerConfigInterface $consumerConfig,
         private readonly CommunicationConfigInterface $communicationConfig,
         private readonly SerializerInterface $serializer,
-        private readonly ConnectionTypeResolver $connectionTypeResolver
+        private readonly ConnectionTypeResolver $connectionTypeResolver,
+        private readonly PublisherConfigInterface $publisherConfig
     ) {
+    }
+
+    /**
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function aroundEncode(
+        MessageEncoder $subject,
+        callable $proceed,
+        string $topic,
+        $message,
+        bool $requestType = true
+    ): string {
+        if (!$requestType || !$this->isKafkaPublisher($topic)) {
+            return $proceed($topic, $message, $requestType);
+        }
+
+        return $this->serializer->serialize($message, JsonEncoder::FORMAT);
+    }
+
+    private function isKafkaPublisher(string $topic): bool
+    {
+        try {
+            $publisher = $this->publisherConfig->getPublisher($topic);
+        } catch (LocalizedException) {
+            return false;
+        }
+
+        return !$publisher->isDisabled()
+            && $this->connectionTypeResolver->getConnectionType($publisher->getConnection()->getName()) === 'kafka';
     }
 
     /**
