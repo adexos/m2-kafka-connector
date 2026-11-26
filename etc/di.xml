@@ -17,6 +17,24 @@
         </arguments>
     </type>
 
+    <type name="Magento\Framework\MessageQueue\ExchangeFactory">
+        <arguments>
+            <argument name="exchangeFactories" xsi:type="array">
+                <item name="kafka" xsi:type="object">Adexos\KafkaConnector\Connection\ExchangeFactory</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Framework\MessageQueue\PublisherPool">
+        <arguments>
+            <argument name="publishers" xsi:type="array">
+                <item name="async" xsi:type="array">
+                    <item name="kafka" xsi:type="object">Magento\Framework\MessageQueue\Publisher</item>
+                </item>
+            </argument>
+        </arguments>
+    </type>
+
     <type name="Magento\Framework\MessageQueue\MessageEncoder">
         <plugin name="kafka_message_encoder" type="Adexos\KafkaConnector\Plugin\MessageQueue\MessageEncoderPlugin"/>
     </type>

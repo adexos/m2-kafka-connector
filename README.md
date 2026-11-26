@@ -7,9 +7,7 @@ It is built to use Magento 2 native queue system with some adjustments to the se
 
 It also handles reading with Avro Schemes.
 
-## Disclaimer
-
-Only the reading part is done from now. You can't write to a queue.
+The connector supports consuming and publishing Avro messages using Magento's native queue interfaces.
 
 ## Installation
 
@@ -130,3 +128,94 @@ Here is how you can do it :
 
 Your custom header filter must implement the `Adexos\KafkaConnector\Serializer\HeaderFilter\AvroHeaderFilterInterface`
 and the serializer will automatically pass the headers to your filter if it exists for your topic.
+
+## Publishing
+
+Declare the payload DTO in `etc/communication.xml`, just as for consumption:
+
+```xml
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Communication/etc/communication.xsd">
+    <topic name="orders.create" request="Namespace\Module\Model\OrderMessage"/>
+</config>
+```
+
+Declare `etc/queue_publisher.xml` in the module using the connector:
+
+```xml
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework-message-queue:etc/publisher.xsd">
+    <publisher topic="orders.create">
+        <connection name="kafka.orders" exchange="kafka"/>
+    </publisher>
+</config>
+```
+
+Add a Kafka configuration group with ID `orders` using the same configuration include as above.
+No consumer or AMQP topology is required for publication. The exchange routes the Magento topic directly to
+the physical Kafka topic configured under `kafka/orders/general/topic_name`.
+
+Inject `Magento\Framework\MessageQueue\PublisherInterface` and publish the DTO:
+
+```php
+$this->publisher->publish('orders.create', $orderMessage);
+```
+
+The DTO is serialized to JSON using the connector's Symfony serializer, then encoded as Avro using
+the registered writer schema. DTO properties must match the Avro contract, including nested records.
+Kafka publication uses the following settings under `kafka/orders/`:
+
+| Path | Purpose |
+| --- | --- |
+| `general/dsn` | Broker host(s) and port(s), without a URL scheme or path |
+| `general/topic_name` | Physical Kafka topic to publish to |
+| `general/publish_timeout_ms` | Kafka delivery and individual Schema Registry request timeout, default `10000` ms each |
+| `auth/security_protocol` | For example `SASL_SSL` |
+| `auth/sasl_mechanism` | SASL mechanism assigned to the service account |
+| `auth/username`, `auth/password` | Kafka service account credentials |
+| `avro/schema_registry_url` | Schema Registry URL |
+| `avro/username`, `avro/password` | Schema Registry credentials |
+| `avro/subject` | Existing writer subject; defaults to `<physical-topic>-value` |
+| `avro/schema_version` | Positive version to pin a contract; empty or `0` selects latest |
+
+`general/group_id`, consumer offset settings and header filters apply only to consumption.
+Writer schemas are cached for the lifetime of the queue instance. Restart long-running publishers when
+changing a contract that uses the latest schema. The connector never registers a schema automatically.
+The service account must have Kafka write permissions and Schema Registry read/lookup permissions.
+
+Encoding uses the existing Avro library. That dependency can substitute a field's default for an explicit
+null and can select an ambiguous record union using defaults. These dependency limitations are not
+corrected by this connector; validate the actual event contract before using such fields or unions.
+
+### Keys and headers
+
+For partition keys and Kafka headers, use the Magento queue interface directly:
+
+```php
+// Inject Magento\Framework\MessageQueue\QueueFactoryInterface as $queueFactory.
+$queue = $queueFactory->create('orders.create', 'kafka.orders');
+$queue->push(new \Magento\Framework\MessageQueue\Envelope(
+    json_encode($record, JSON_THROW_ON_ERROR),
+    [
+        'kafka_key' => 'order-00123',
+        'kafka_headers' => ['eventType' => 'CreateCustomerOrder']
+    ]
+));
+```
+
+The body must be a JSON object containing the Avro record. Keys must be strings; header names must be strings
+and header values must be strings or null. Metadata is sent separately from the Avro payload.
+Use the same key for events belonging to the same order when partition ordering is needed.
+
+### Delivery and failures
+
+Publication is synchronous: the call returns only after a successful Kafka delivery report.
+The producer uses `acks=all` and idempotent producer retries. Serialization errors, broker rejections and
+delivery timeouts propagate to the caller. In particular, a successful flush alone is insufficient:
+delivery reports are also checked for broker errors.
+
+After a failed call, pending messages are purged and the next call creates a fresh producer.
+A timeout can still mean Kafka accepted the message before its acknowledgment was lost. Callers must
+handle duplicates if they retry. This connector does not provide an outbox, business event deduplication
+or background retries. Those belong in the application publishing the events. Consumer dev mode does
+not disable publication.

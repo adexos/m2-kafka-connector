@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Adexos\KafkaConnector\Connection\Queue;
 
+use Adexos\KafkaConnector\Connection\Producer;
+use Adexos\KafkaConnector\Connection\ProducerFactory;
 use Adexos\KafkaConnector\Model\Config\ConfigResolver;
 use Adexos\KafkaConnector\Serializer\AvroSchemaRegistrySerializerFactory;
 use Exception;
@@ -11,7 +13,6 @@ use JsonException;
 use Koco\Kafka\Messenger\KafkaMessageStamp;
 use Koco\Kafka\Messenger\KafkaTransportFactory;
 use Koco\Kafka\RdKafka\RdKafkaFactory;
-use LogicException;
 use Magento\Framework\MessageQueue\Envelope;
 use Magento\Framework\MessageQueue\EnvelopeInterface;
 use Magento\Framework\MessageQueue\QueueInterface;
@@ -28,12 +29,14 @@ class Queue implements QueueInterface
         private readonly LoggerInterface                     $logger,
         private readonly AvroSchemaRegistrySerializerFactory $avroSchemaRegistrySerializerFactory,
         private readonly ConfigResolver                      $kafkaConfig,
-        private readonly string                              $magentoTopicName
+        private readonly string                              $magentoTopicName,
+        private readonly ProducerFactory                     $producerFactory
     )
     {
     }
 
     private ?TransportInterface $transport = null;
+    private ?Producer $producer = null;
 
     /**
      * @throws JsonException
@@ -101,12 +104,30 @@ class Queue implements QueueInterface
         $this->getKafkaConnection()->reject($envelope->getProperties()[self::ORIGINAL_ENVELOPE]);
     }
 
-    /**
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
     public function push(EnvelopeInterface $envelope): void
     {
-        throw new LogicException('Method not implemented yet');
+        if ($this->producer !== null) {
+            $this->producer->send($envelope);
+
+            return;
+        }
+
+        $serializer = $this->avroSchemaRegistrySerializerFactory->create([
+            'baseUri'          => $this->kafkaConfig->getAvroSchemaRegistryUrl(),
+            'userAuth'         => $this->kafkaConfig->getAvroUsername(),
+            'passwordAuth'     => $this->kafkaConfig->getAvroPassword(),
+            'topic'            => $this->magentoTopicName,
+            'subject'          => $this->kafkaConfig->getAvroSubject(),
+            'schemaVersion'    => $this->kafkaConfig->getAvroSchemaVersion(),
+            'requestTimeoutMs' => $this->kafkaConfig->getPublishTimeoutMs()
+        ]);
+
+        $this->producer = $this->producerFactory->create([
+            'kafkaConfig' => $this->kafkaConfig,
+            'serializer'  => $serializer
+        ]);
+
+        $this->producer->send($envelope);
     }
 
     private function getKafkaConnection(): TransportInterface

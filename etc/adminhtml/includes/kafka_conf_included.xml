@@ -15,6 +15,11 @@
         <field id="group_id" translate="label" type="text" sortOrder="15" showInDefault="1">
             <label>Group ID</label>
         </field>
+        <field id="publish_timeout_ms" translate="label" type="text" sortOrder="16" showInDefault="1">
+            <label>Publish timeout (ms)</label>
+            <validate>validate-digits validate-greater-than-zero</validate>
+            <comment>Maximum wait for Kafka delivery. Defaults to 10000 ms. Group ID is only needed for consumption.</comment>
+        </field>
         <field id="debug" translate="label" type="select" sortOrder="20" showInDefault="1">
             <label>Debug mode</label>
             <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -50,6 +55,15 @@
     </group>
     <group id="avro" translate="label" type="text" sortOrder="30" showInDefault="1">
         <label>Avro Schema Registry</label>
+        <field id="subject" translate="label" type="text" sortOrder="5" showInDefault="1">
+            <label>Writer schema subject</label>
+            <comment>Publication only. Defaults to the physical Kafka topic name followed by -value.</comment>
+        </field>
+        <field id="schema_version" translate="label" type="text" sortOrder="6" showInDefault="1">
+            <label>Writer schema version</label>
+            <validate>validate-digits</validate>
+            <comment>Publication only. Leave empty or use 0 for latest. Set a positive version to pin the contract.</comment>
+        </field>
         <field id="schema_registry_url" translate="label" type="text" sortOrder="10" showInDefault="1">
             <label>Schema registry URL</label>
         </field>
